@@ -1,6 +1,7 @@
 import datetime
 import json
 import streamlit as st
+from streamlit_autorefresh import st_autorefresh
 from streamlit_option_menu import option_menu
 from attention_rules import process_attention_data  # processar dados de atenção
 import subprocess
@@ -134,11 +135,17 @@ def start_data_collection():
                 st.warning("A coleta de dados já está em execução.")
             else:
                 try:
+                    status_placeholder = st.empty()
+                    # Exibe a mensagem inicial imediatamente
+                    status_placeholder.success("Inicializando componentes, aguarde...")
+
                     # Inicia o subprocesso e salva o PID
                     process = subprocess.Popen(["python", "main.py"], cwd=os.getcwd())
                     with open(PID_FILE, "w") as f:
                         f.write(str(process.pid))
-                    st.success("Coleta de dados iniciada com sucesso.")
+                    time.sleep(10)
+                    #st.success("Captura de dados iniciada.")
+                    status_placeholder.success("Captura de dados iniciada.")
                 except Exception as e:
                     st.error(f"Erro ao iniciar a coleta: {e}")
 
@@ -162,6 +169,7 @@ def start_data_collection():
 # 3. Página de Análise dos Dados
 def analyze_data():
     st.title("Análise dos Dados Atencionais")
+    # Debug
     print("--------------------------------------------------------")
     print("DATA", datetime.datetime.now())
     print("--------------------------------------------------------")
@@ -329,16 +337,19 @@ def analyze_data():
                 st.plotly_chart(fig_sound, use_container_width=True)
 
         else:
-            st.warning("Ainda não há dados processados para análise.")
+            st.warning("Aguarde... Processando dados de atenção")
+
+        # Utiliza o st_autorefresh para atualizar a página a cada 30 segundos sem bloquear a interface
+        st_autorefresh(interval=30000, key="datarefresh")
 
         # Atualiza automaticamente a página a cada 30 segundos
-        now = datetime.datetime.now()
-        seconds = now.second
+        #now = datetime.datetime.now()
+        #seconds = now.second
 
         # Espera até o próximo ciclo de 00 ou 30 segundos
-        sleep_time = 30 - seconds if seconds < 30 else 60 - seconds
-        time.sleep(sleep_time)
-        st.rerun()
+        #sleep_time = 30 - seconds if seconds < 30 else 60 - seconds
+        #time.sleep(sleep_time)
+        #st.rerun()
 
 
 
@@ -367,7 +378,8 @@ def plot_most_used_software(software_usage_time):
     fig.update_traces(
         texttemplate='%{y:2f} min',  # tempo com 1 casa decimal
         textposition='outside',
-        marker=dict(line=dict(width=0))  # Remove bordas das barras
+        marker=dict(line=dict(width=0)),  # Remove bordas das barras
+        hovertemplate='%{x}: %{y} min<extra></extra>'
     )
 
     fig.update_layout(
@@ -422,7 +434,8 @@ def plot_attention_pie_chart(grouped):
     fig.update_traces(
         textfont=dict(family="Open Sans, Verdana, Arial, sans-serif", color="#ffffff"),
         marker=dict(line=dict(color="white", width=1)),  # Remove bordas indesejadas
-        hovertemplate="<b>%{label}</b><br>%{percent:.2%}<extra></extra>",
+        #hovertemplate="<b>%{label}</b><br>%{percent:.2%}<extra></extra>",
+        hovertemplate='%{label}: %{percent:.2%} min<extra></extra>'
     )
 
     fig.update_layout(
@@ -474,7 +487,8 @@ def plot_sound_impact_chart(sound_impact_data):
     fig.update_traces(
         texttemplate='%{x:.2f} min',
         textposition="outside",
-        marker=dict(line=dict(width=0))  # Remove bordas das barras
+        marker=dict(line=dict(width=0)),  # Remove bordas das barras
+        hovertemplate='%{y}: %{x} min<extra></extra>'
     )
 
     fig.update_layout(

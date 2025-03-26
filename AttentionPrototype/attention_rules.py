@@ -73,7 +73,7 @@ def is_head_position_valid(head_pose, monitor_preferences):
         return True  # Agora, nunca será considerado distração
 
     # Se "No Face Detected", retornar automaticamente False (Distraído)
-    if head_pose == "No Face Detected":
+    if head_pose == "Sem Detecção de Rosto":
         return False   
 
     return any(head_position_map.get(head_pose, "") == position for position in monitor_preferences.values())
@@ -275,7 +275,9 @@ def classify_block(row, software_switches, switch_threshold=3, previous_blocks=N
     if row["Atento (%)"] >= 60:
         # Se o som predominante for **Fala e Vozes** (mas não em reuniões)
         if row["Som Predominante"] == "Fala e Vozes" and row["Software Mais Usado"] not in ["zoom.us", "Meet", "Microsoft Teams"]:
-            return "Atenção Seletiva"
+            #return "Atenção Seletiva"
+            if row.get("Som Predominante Score", 0.0) < 0.7:
+                return "Atenção Seletiva"
         # Se o som predominante for **Música**, e o usuário configurou que "Me distrai"
         if row["Som Predominante"] == "Música" and user_preferences["Contexto"]["PreferenciaMusica"] == "Me distrai":
             return "Atenção Seletiva"
@@ -328,15 +330,16 @@ def analyze_attention_in_blocks(data, interval="30s", switch_threshold=3):
         "Posição Cabeça Mais Comum": x["HeadPose"].mode()[0] if not x["HeadPose"].isna().all() else "Sem Detecção de Rosto",
         "Som Predominante": (
             x.loc[x["AudioScore"] >= 0.4, "AudioGroup"].mode()[0]  
-            if len(x.loc[x["AudioScore"] >= 0.4, "AudioGroup"]) > 1  # Exigir pelo menos 2 ocorrências
+            #if len(x.loc[x["AudioScore"] >= 0.4, "AudioGroup"]) > 1  # Exigir pelo menos 2 ocorrências
+            if not x.loc[x["AudioScore"] >= 0.4, "AudioGroup"].empty
             else "Irrelevante para Análise"
         ),
         "Looking Down Count": (x["HeadPose"] == "Olhando para Baixo").sum()  # Conta quantas vezes olhou para baixo no bloco
     }).apply(pd.Series)
 
-    
-
-
+    # Filtrar apenas blocos que já estão completos (ou seja, cujo período de 30s já passou)
+    current_time = pd.Timestamp.now()
+    grouped = grouped[grouped.index + pd.Timedelta(seconds=30) < current_time]
 
     # Chamar classify_block() para determinar o Tipo de Atenção
     for index, row in grouped.iterrows():
@@ -389,7 +392,10 @@ def calculate_sound_impact(data, block_interval_seconds=30):
         - Percentual médio de distração enquanto esse som predominava.
     """
     # Remover blocos onde o som predominante foi "Irrelevante para Análise"
-    data = data[data["Som Predominante"] != "Irrelevante para Análise"]
+    #data = data[data["Som Predominante"] != "Irrelevante para Análise"]
+
+    # Remover blocos onde o som predominante foi "Irrelevante para Análise" ou "Ambiente Silencioso"
+    data = data[~data["Som Predominante"].isin(["Irrelevante para Análise", "Ambiente Silencioso"])]
 
     # Calcular o tempo total que cada som predominou (em minutos)
     sound_presence_time = data["Som Predominante"].value_counts() * block_interval_seconds / 60

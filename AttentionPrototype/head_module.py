@@ -76,9 +76,9 @@ class HeadService:
             # Resolve o problema PnP para calcular ângulos
             success, rot_vec, trans_vec = cv2.solvePnP(face_3d, face_2d, cam_matrix, dist_matrix)
              # Get rotational matrix
-            rmat = cv2.Rodrigues(rot_vec)
+            rmat, jac = cv2.Rodrigues(rot_vec)
             # Get angles
-            angles = cv2.RQDecomp3x3(rmat)
+            angles, mtxR, mtxe, ex, ly, Qz = cv2.RQDecomp3x3(rmat)
 
             # Calcula ângulos de inclinação (pitch, yaw, roll)
             x = angles[0] * 360
