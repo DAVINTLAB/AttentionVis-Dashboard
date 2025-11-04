@@ -8,6 +8,6 @@ https://davint-attentionvis-dashboard.streamlit.app
 # About the Authors
 We are members of the Data Visualization and Interaction Lab (DaVInt) at PUCRS:
 
-- Isabel H. Manssour -- Professor Coordinator of DaVInt -- 2017-current.
-- Milene S. Silveira -- Professor of DaVInt -- 2017-current.
+- Isabel H. Manssour -- Researcher and Professor Coordinator of DaVInt.
+- Milene S. Silveira -- Researcher and Professor.
 - Cassiano S. Souza -- Master Student in Computer Science -- 2023-current.
