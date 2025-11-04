@@ -5,6 +5,8 @@ User attention management has become a growing concern in recent years, largely 
 # Demonstration
 https://davint-attentionvis-dashboard.streamlit.app
 
+---
+
 # About the Authors
 We are members of the Data Visualization and Interaction Lab (DaVInt) at PUCRS:
 
